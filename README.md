@@ -1,112 +1,225 @@
 # LLM Inference Service with Caching and Rate Limiting
 
+A production-grade LLM inference service built with FastAPI and vLLM, optimized for GPU-based serving with AWQ quantization. Designed to demonstrate how large language models can be deployed as reliable, scalable backend infrastructure.
+
 ## Overview
 
-This project is a **production-oriented LLM inference service** designed to expose large language models as a **reliable backend API**, rather than as direct model or SDK calls.
+This service exposes LLM capabilities through REST APIs while addressing real-world production concerns: latency optimization, concurrent request handling, cost control through caching, and system observability.
 
-The service provides REST endpoints for common text tasks such as summarization, question answering, and rewriting, while addressing real-world engineering concerns including **latency, concurrency, cost control, and observability**.
-
-The goal of this project is not to build a new model, but to demonstrate how LLMs can be **operated as backend infrastructure** in production systems.
-
----
-
-## Why I Built This
-
-While working on AI-driven applications and agent-based systems, I noticed that most examples treat LLMs as simple API calls. In real systems, however, the main challenges are not text generation itself, but:
-
-- Handling **concurrent requests**
-- Reducing **duplicate inference calls**
-- Preventing **uncontrolled traffic spikes**
-- Monitoring **latency and failure modes**
-- Making AI usage predictable and debuggable
-
-This project was built to explore how LLMs behave when deployed behind a service boundary, similar to any other backend dependency.
-
----
-
-## How I Got the Idea
-
-The idea came from building multiple AI-powered applications where the same prompts or workflows were repeatedly executed across users and services.
-
-Directly calling an LLM for every request led to:
-- Higher latency
-- Redundant computation
-- Difficulty tracking performance issues
-
-By introducing a dedicated inference service with caching and rate limiting, I was able to centralize LLM usage and apply standard backend engineering practices to AI workloads.
-
----
-
-## What This Service Does
-
-- Exposes REST APIs for LLM-based text tasks
-- Caches repeated requests to avoid unnecessary recomputation
-- Applies API key–based rate limiting to control traffic
-- Handles requests asynchronously for better throughput
-- Provides basic observability for inference latency and errors
-
-This allows downstream applications to treat the LLM as a **stable and scalable backend service**.
-
----
+Unlike typical LLM demos that treat models as simple API calls, this project applies backend engineering principles to AI workloads, making inference predictable, debuggable, and scalable.
 
 ## Architecture
 
-**Core components:**
-- **FastAPI** for API routing and request handling
-- **Open-source instruction-tuned LLMs** (e.g., Mistral or LLaMA) for inference
-- **Redis** for caching and rate limiting
-- **Docker** for containerized deployment
-- **Prometheus-compatible metrics** for observability
-
-The architecture is intentionally minimal, focusing on clarity and reliability rather than over-engineering.
-
----
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Client Requests                          │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      FastAPI Gateway                            │
+│              (Request Validation, API Key Auth)                 │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                ┌───────────────┼───────────────┐
+                ▼               ▼               ▼
+        ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+        │ Rate Limiter │ │ Redis Cache  │ │  Prometheus  │
+        │   (Redis)    │ │  (Response)  │ │   Metrics    │
+        └──────────────┘ └──────────────┘ └──────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      vLLM Inference Engine                      │
+│         (Mistral-7B-Instruct + AWQ 4-bit Quantization)         │
+│                    Running on NVIDIA T4 GPU                     │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Key Features
 
-- **REST API Endpoints**
-  - `/infer` for single inference requests
-  - `/health` for service health checks
+**GPU-Optimized Inference**
+- vLLM engine with continuous batching for high throughput
+- AWQ 4-bit quantization to fit Mistral-7B on T4 (16GB VRAM)
+- PagedAttention for efficient memory management
 
-- **Caching**
-  - Redis-based cache keyed by prompt and model parameters
-  - Configurable TTL to balance freshness and performance
+**Caching Layer**
+- Redis-based response caching keyed by prompt hash
+- Configurable TTL for freshness vs performance tradeoff
+- Cache hit/miss metrics for optimization
 
-- **Rate Limiting**
-  - API key–based request limits
-  - Prevents abuse and ensures fair usage
+**Rate Limiting**
+- API key-based request throttling
+- Sliding window rate limiting via Redis
+- Prevents abuse and ensures fair resource allocation
 
-- **Observability**
-  - Latency and request metrics
-  - Cache hit/miss tracking
-  - Structured logging for debugging
-
----
+**Observability**
+- Prometheus metrics for latency, throughput, and GPU utilization
+- Structured logging for debugging
+- Health check endpoints for monitoring
 
 ## Tech Stack
 
-- Python 3.10+
-- FastAPI
-- Redis
-- Open-source LLMs (Mistral / LLaMA)
-- Docker & Docker Compose
-- Prometheus (optional for metrics)
+| Component | Technology |
+|-----------|------------|
+| API Framework | FastAPI |
+| Inference Engine | vLLM |
+| Model | Mistral-7B-Instruct-v0.2-AWQ |
+| Quantization | AWQ (4-bit) |
+| Cache & Rate Limiting | Redis |
+| Containerization | Docker |
+| Metrics | Prometheus |
+| GPU | NVIDIA T4 (16GB) |
 
----
+## API Endpoints
 
-## What This Project Demonstrates
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/infer` | POST | Run inference with prompt |
+| `/health` | GET | Service health check |
+| `/metrics` | GET | Prometheus metrics |
 
-This project demonstrates:
-- Treating AI models as **backend services**, not demos
-- Applying **software engineering principles** to AI systems
-- Designing APIs with performance and reliability in mind
-- Avoiding vendor lock-in by using open-source models
+### Request Example
 
-It is intended as a **software engineering project with an AI focus**, rather than a research or model-training project.
+```bash
+curl -X POST "http://localhost:8000/infer" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"prompt": "Explain microservices in one paragraph", "max_tokens": 256}'
+```
 
----
+### Response Example
+
+```json
+{
+  "response": "Microservices is an architectural style...",
+  "latency_ms": 145,
+  "cached": false,
+  "model": "mistral-7b-instruct-awq"
+}
+```
+
+## Performance Benchmarks
+
+> **Note**: Benchmarks measured on NVIDIA T4 GPU with Mistral-7B-Instruct-AWQ model.
+
+| Metric | Value |
+|--------|-------|
+| P50 Latency | `TODO` |
+| P95 Latency | `TODO` |
+| P99 Latency | `TODO` |
+| Throughput | `TODO` req/s |
+| Cache Hit Latency | `TODO` |
+| GPU Memory Usage | `TODO` |
+| Concurrent Users Tested | `TODO` |
+
+*Benchmarks will be updated after load testing with Locust.*
+
+## Project Structure
+
+```
+├── app/
+│   ├── main.py              # FastAPI application
+│   ├── inference.py         # vLLM inference logic
+│   ├── cache.py             # Redis caching layer
+│   ├── rate_limiter.py      # Rate limiting middleware
+│   ├── metrics.py           # Prometheus metrics
+│   └── config.py            # Configuration settings
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── locustfile.py            # Load testing script
+└── README.md
+```
 
 ## Running Locally
 
+### Prerequisites
+- NVIDIA GPU with CUDA support
+- Docker and Docker Compose
+- 16GB+ GPU VRAM (T4 or better)
+
+### Quick Start
+
 ```bash
+# Clone repository
+git clone https://github.com/Jeet-51/llm-inference-service.git
+cd llm-inference-service
+
+# Start services
 docker-compose up --build
+
+# Service available at http://localhost:8000
+```
+
+### Running on Google Colab (T4)
+
+```python
+# Install dependencies
+!pip install vllm fastapi uvicorn redis prometheus-client
+
+# Run the service
+!python app/main.py
+```
+
+## Load Testing
+
+```bash
+# Install Locust
+pip install locust
+
+# Run load test
+locust -f locustfile.py --host=http://localhost:8000
+```
+
+## Configuration
+
+Environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MODEL_NAME` | `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` | HuggingFace model |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection |
+| `RATE_LIMIT` | `100` | Requests per minute per key |
+| `CACHE_TTL` | `3600` | Cache expiry in seconds |
+
+## Why This Architecture
+
+**Why vLLM?**
+- Continuous batching handles concurrent requests efficiently
+- PagedAttention reduces memory fragmentation
+- Industry standard for LLM serving (used at scale by major companies)
+
+**Why AWQ Quantization?**
+- Reduces model size by 4x with minimal quality loss
+- Fits 7B parameter model comfortably on T4 (16GB VRAM)
+- Faster inference than FP16
+
+**Why Redis for Caching?**
+- Sub-millisecond lookups
+- Handles rate limiting and caching in single dependency
+- Production-proven at scale
+
+## What This Project Demonstrates
+
+- Deploying LLMs as production backend services
+- GPU inference optimization with quantization
+- Applying software engineering best practices to AI systems
+- Building observable, rate-limited, cached inference pipelines
+- Designing for throughput and latency requirements
+
+## Future Improvements
+
+- [ ] Streaming responses via WebSocket
+- [ ] Multi-model support
+- [ ] Request queuing for traffic spikes
+- [ ] Kubernetes deployment manifests
+- [ ] Grafana dashboard for metrics
+
+## License
+
+MIT
+
+## Author
+
+Jeet Patel - [LinkedIn](https://linkedin.com/in/pateljeet22) | [GitHub](https://github.com/Jeet-51)
