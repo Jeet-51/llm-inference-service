@@ -57,6 +57,9 @@ Tested on NVIDIA T4 GPU (Google Colab):
 | Cache Hit Rate | 60% |
 | Model | Mistral-7B-Instruct-AWQ |
 
+<img width="1189" height="490" alt="image" src="https://github.com/user-attachments/assets/0b65b97f-bdc2-4405-82b4-40c0e6627ebd" />
+
+
 > Note: Latency on dedicated GPU servers (A10, A100) would be significantly faster.
 
 ## Tech Stack
