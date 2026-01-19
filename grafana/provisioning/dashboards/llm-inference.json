@@ -1,0 +1,50 @@
+{
+  "dashboard": {
+    "title": "LLM Inference Service",
+    "uid": "llm-inference",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [{"expr": "rate(llm_requests_total[1m])", "legendFormat": "{{status}} - cached:{{cached}}"}]
+      },
+      {
+        "title": "Request Latency (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {"expr": "histogram_quantile(0.50, rate(llm_request_latency_ms_bucket[5m]))", "legendFormat": "P50"},
+          {"expr": "histogram_quantile(0.95, rate(llm_request_latency_ms_bucket[5m]))", "legendFormat": "P95"},
+          {"expr": "histogram_quantile(0.99, rate(llm_request_latency_ms_bucket[5m]))", "legendFormat": "P99"}
+        ]
+      },
+      {
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 8, "w": 6, "h": 6},
+        "targets": [{"expr": "rate(llm_cache_hits_total[5m]) / (rate(llm_cache_hits_total[5m]) + rate(llm_cache_misses_total[5m])) * 100"}]
+      },
+      {
+        "title": "Rate Limited Requests",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 8, "w": 6, "h": 6},
+        "targets": [{"expr": "increase(llm_rate_limited_total[1h])"}]
+      },
+      {
+        "title": "Model Status",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 8, "w": 6, "h": 6},
+        "targets": [{"expr": "llm_model_loaded"}]
+      },
+      {
+        "title": "Total Requests",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 8, "w": 6, "h": 6},
+        "targets": [{"expr": "sum(llm_requests_total)"}]
+      }
+    ],
+    "schemaVersion": 30,
+    "version": 1
+  }
+}

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  llm-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=TheBloke/Mistral-7B-Instruct-v0.2-AWQ
+      - REDIS_URL=redis://redis:6379
+      - RATE_LIMIT=100
+      - CACHE_TTL=3600
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - llm-service
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  grafana_data:
