@@ -1,5 +1,12 @@
 # LLM Inference Service with Caching and Rate Limiting
 
+![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![vLLM](https://img.shields.io/badge/vLLM-0.3-green)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-E6522C?logo=prometheus&logoColor=white)
+
 A production-grade LLM inference service built with FastAPI and vLLM, optimized for GPU-based serving with AWQ quantization.
 
 ## Overview
