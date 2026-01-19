@@ -47,6 +47,8 @@ Tested on NVIDIA T4 GPU (Google Colab):
 | Cache Hit Rate | 60% |
 | Model | Mistral-7B-Instruct-AWQ |
 
+> Note: Latency on dedicated GPU servers (A10, A100) would be significantly faster.
+
 ### Latency Comparison
 <img width="1189" height="490" alt="image" src="https://github.com/user-attachments/assets/0b65b97f-bdc2-4405-82b4-40c0e6627ebd" />
 
@@ -67,7 +69,7 @@ Tested on NVIDIA T4 GPU (Google Colab):
 *AWQ 4-bit quantization reduces memory from ~28GB to 14GB, enabling deployment on consumer-grade T4 GPUs.*
 
 
-> Note: Latency on dedicated GPU servers (A10, A100) would be significantly faster.
+
 
 ## Tech Stack
 
