@@ -6,6 +6,19 @@ A production-grade LLM inference service built with FastAPI and vLLM, optimized 
 
 This service exposes LLM capabilities through REST APIs while addressing real-world production concerns: latency optimization, concurrent request handling, cost control through caching, and system observability.
 
+## Motivation
+
+While working with LLMs, I noticed most tutorials focus on calling APIs or fine-tuning models, but rarely address how to serve them in production. Questions like "How do you handle 100 users hitting your model simultaneously?" or "How do you avoid re-running inference for the same prompt?" are often left unanswered.
+
+This project bridges that gap by applying backend engineering principles to LLM workloads:
+
+- **Cost Control**: Why pay for GPU inference when the same question was asked 5 minutes ago? Caching solves this.
+- **Fair Usage**: Without rate limiting, one user can monopolize your GPU. Sliding-window limits ensure fair access.
+- **Observability**: When latency spikes, you need metrics to debug. Prometheus + Grafana provide that visibility.
+- **Resource Optimization**: A 7B parameter model typically needs 28GB+ VRAM. AWQ quantization fits it in 14GB, making T4 GPUs viable.
+
+The goal was to build something I'd actually deploy at work, not just a demo that breaks under real traffic.
+
 ## Architecture
 
 ```
