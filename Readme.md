@@ -47,13 +47,23 @@ Tested on NVIDIA T4 GPU (Google Colab):
 | Cache Hit Rate | 60% |
 | Model | Mistral-7B-Instruct-AWQ |
 
+### Latency Comparison
 <img width="1189" height="490" alt="image" src="https://github.com/user-attachments/assets/0b65b97f-bdc2-4405-82b4-40c0e6627ebd" />
+
 *Redis caching reduces latency from 8.3 seconds to 5ms - a 1,600x improvement for repeated queries.*
 
-<img width="1190" height="590" alt="image" src="https://github.com/user-attachments/assets/d322decd-773f-4fcb-a7e8-ab88e170efdb" />
-*GPU inference dominates latency; caching eliminates this bottleneck for cached prompts.*
+---
 
+### Request Flow Analysis
+<img width="1190" height="590" alt="image" src="https://github.com/user-attachments/assets/d322decd-773f-4fcb-a7e8-ab88e170efdb" />
+
+*GPU inference dominates latency; caching eliminates this bottleneck entirely for cached prompts.*
+
+---
+
+### GPU Memory Optimization
 <img width="516" height="592" alt="image" src="https://github.com/user-attachments/assets/71cbe533-3726-4c2e-b834-2723bd0ce3d9" />
+
 *AWQ 4-bit quantization reduces memory from ~28GB to 14GB, enabling deployment on consumer-grade T4 GPUs.*
 
 
